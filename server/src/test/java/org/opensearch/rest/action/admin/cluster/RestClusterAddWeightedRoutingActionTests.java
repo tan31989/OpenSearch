@@ -9,14 +9,15 @@
 package org.opensearch.rest.action.admin.cluster;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import org.junit.Before;
+
 import org.opensearch.OpenSearchParseException;
 import org.opensearch.action.admin.cluster.shards.routing.weighted.put.ClusterPutWeightedRoutingRequest;
-import org.opensearch.common.bytes.BytesArray;
-import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.common.bytes.BytesArray;
+import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.test.rest.FakeRestRequest;
 import org.opensearch.test.rest.RestActionTestCase;
+import org.junit.Before;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -34,14 +35,15 @@ public class RestClusterAddWeightedRoutingActionTests extends RestActionTestCase
     }
 
     public void testCreateRequest_SupportedRequestBody() throws IOException {
-        String req = "{\"us-east-1c\" : \"1\", \"us-east-1d\":\"1.0\", \"us-east-1a\":\"0.0\"}";
+        String req = "{\"weights\":{\"us-east-1c\":\"0\",\"us-east-1b\":\"1\",\"us-east-1a\":\"1\"},\"_version\":1}";
         RestRequest restRequest = buildRestRequest(req);
         ClusterPutWeightedRoutingRequest clusterPutWeightedRoutingRequest = RestClusterPutWeightedRoutingAction.createRequest(restRequest);
         assertEquals("zone", clusterPutWeightedRoutingRequest.getWeightedRouting().attributeName());
         assertNotNull(clusterPutWeightedRoutingRequest.getWeightedRouting().weights());
-        assertEquals("1.0", clusterPutWeightedRoutingRequest.getWeightedRouting().weights().get("us-east-1c").toString());
-        assertEquals("1.0", clusterPutWeightedRoutingRequest.getWeightedRouting().weights().get("us-east-1d").toString());
-        assertEquals("0.0", clusterPutWeightedRoutingRequest.getWeightedRouting().weights().get("us-east-1a").toString());
+        assertEquals("0.0", clusterPutWeightedRoutingRequest.getWeightedRouting().weights().get("us-east-1c").toString());
+        assertEquals("1.0", clusterPutWeightedRoutingRequest.getWeightedRouting().weights().get("us-east-1b").toString());
+        assertEquals("1.0", clusterPutWeightedRoutingRequest.getWeightedRouting().weights().get("us-east-1a").toString());
+        assertEquals(1, clusterPutWeightedRoutingRequest.getVersion());
     }
 
     public void testCreateRequest_UnsupportedRequestBody() throws IOException {
@@ -54,7 +56,7 @@ public class RestClusterAddWeightedRoutingActionTests extends RestActionTestCase
     public void testCreateRequest_MalformedRequestBody() throws IOException {
         Map<String, String> params = new HashMap<>();
 
-        String req = "{\"us-east-1c\" : \1\", \"us-east-1d\":\"1\", \"us-east-1a\":\"0\"}";
+        String req = "{\"weights\":{\"us-east-1c\":\"0,\"us-east-1b\":\"1\",\"us-east-1a\":\"1\"},\"_version\":1}";
         RestRequest restRequest = buildRestRequest(req);
         assertThrows(JsonParseException.class, () -> RestClusterPutWeightedRoutingAction.createRequest(restRequest));
     }
@@ -69,7 +71,7 @@ public class RestClusterAddWeightedRoutingActionTests extends RestActionTestCase
         return new FakeRestRequest.Builder(xContentRegistry()).withMethod(RestRequest.Method.PUT)
             .withPath("/_cluster/routing/awareness/zone/weights")
             .withParams(singletonMap("attribute", "zone"))
-            .withContent(new BytesArray(content), XContentType.JSON)
+            .withContent(new BytesArray(content), MediaTypeRegistry.JSON)
             .build();
     }
 

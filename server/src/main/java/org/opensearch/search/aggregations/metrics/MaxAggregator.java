@@ -37,9 +37,13 @@ import org.apache.lucene.index.PointValues;
 import org.apache.lucene.search.CollectionTerminatedException;
 import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.util.Bits;
+import org.apache.lucene.util.NumericUtils;
 import org.opensearch.common.lease.Releasables;
 import org.opensearch.common.util.BigArrays;
 import org.opensearch.common.util.DoubleArray;
+import org.opensearch.index.codec.composite.CompositeIndexFieldInfo;
+import org.opensearch.index.compositeindex.datacube.MetricStat;
+import org.opensearch.index.compositeindex.datacube.startree.utils.StarTreeQueryHelper;
 import org.opensearch.index.fielddata.NumericDoubleValues;
 import org.opensearch.index.fielddata.SortedNumericDoubleValues;
 import org.opensearch.search.DocValueFormat;
@@ -48,6 +52,8 @@ import org.opensearch.search.aggregations.Aggregator;
 import org.opensearch.search.aggregations.InternalAggregation;
 import org.opensearch.search.aggregations.LeafBucketCollector;
 import org.opensearch.search.aggregations.LeafBucketCollectorBase;
+import org.opensearch.search.aggregations.StarTreeBucketCollector;
+import org.opensearch.search.aggregations.StarTreePreComputeCollector;
 import org.opensearch.search.aggregations.support.ValuesSource;
 import org.opensearch.search.aggregations.support.ValuesSourceConfig;
 import org.opensearch.search.internal.SearchContext;
@@ -55,14 +61,17 @@ import org.opensearch.search.internal.SearchContext;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+
+import static org.opensearch.index.compositeindex.datacube.startree.utils.StarTreeQueryHelper.getSupportedStarTree;
 
 /**
  * Aggregate all docs into a max value
  *
  * @opensearch.internal
  */
-class MaxAggregator extends NumericMetricsAggregator.SingleValue {
+class MaxAggregator extends NumericMetricsAggregator.SingleValue implements StarTreePreComputeCollector {
 
     final ValuesSource.Numeric valuesSource;
     final DocValueFormat formatter;
@@ -120,6 +129,21 @@ class MaxAggregator extends NumericMetricsAggregator.SingleValue {
                 throw new CollectionTerminatedException();
             }
         }
+
+        CompositeIndexFieldInfo supportedStarTree = getSupportedStarTree(this.context);
+        if (supportedStarTree != null) {
+            if (parent != null && subAggregators.length == 0) {
+                // If this a child aggregator, then the parent will trigger star-tree pre-computation.
+                // Returning NO_OP_COLLECTOR explicitly because the getLeafCollector() are invoked starting from innermost aggregators
+                return LeafBucketCollector.NO_OP_COLLECTOR;
+            }
+            return getStarTreeCollector(ctx, sub, supportedStarTree);
+        }
+        return getDefaultLeafCollector(ctx, sub);
+    }
+
+    private LeafBucketCollector getDefaultLeafCollector(LeafReaderContext ctx, LeafBucketCollector sub) throws IOException {
+
         final BigArrays bigArrays = context.bigArrays();
         final SortedNumericDoubleValues allValues = valuesSource.doubleValues(ctx);
         final NumericDoubleValues values = MultiValueMode.MAX.select(allValues);
@@ -141,6 +165,23 @@ class MaxAggregator extends NumericMetricsAggregator.SingleValue {
             }
 
         };
+    }
+
+    public LeafBucketCollector getStarTreeCollector(LeafReaderContext ctx, LeafBucketCollector sub, CompositeIndexFieldInfo starTree)
+        throws IOException {
+        AtomicReference<Double> max = new AtomicReference<>(maxes.get(0));
+        return StarTreeQueryHelper.getStarTreeLeafCollector(
+            context,
+            valuesSource,
+            ctx,
+            sub,
+            starTree,
+            MetricStat.MAX.getTypeName(),
+            value -> {
+                max.set(Math.max(max.get(), (NumericUtils.sortableLongToDouble(value))));
+            },
+            () -> maxes.set(0, max.get())
+        );
     }
 
     @Override
@@ -214,5 +255,28 @@ class MaxAggregator extends NumericMetricsAggregator.SingleValue {
             }
         });
         return result[0] != null ? converter.apply(result[0]) : null;
+    }
+
+    /**
+     * The parent aggregator invokes this method to get a StarTreeBucketCollector,
+     * which exposes collectStarTreeEntry() to be evaluated on filtered star tree entries
+     */
+    public StarTreeBucketCollector getStarTreeBucketCollector(
+        LeafReaderContext ctx,
+        CompositeIndexFieldInfo starTree,
+        StarTreeBucketCollector parentCollector
+    ) throws IOException {
+        return StarTreeQueryHelper.getStarTreeBucketMetricCollector(
+            starTree,
+            MetricStat.MAX.getTypeName(),
+            valuesSource,
+            parentCollector,
+            (bucket) -> {
+                long from = maxes.size();
+                maxes = context.bigArrays().grow(maxes, bucket + 1);
+                maxes.fill(from, maxes.size(), Double.NEGATIVE_INFINITY);
+            },
+            (bucket, metricValue) -> maxes.set(bucket, Math.max(maxes.get(bucket), (NumericUtils.sortableLongToDouble(metricValue))))
+        );
     }
 }
