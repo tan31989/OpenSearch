@@ -46,7 +46,7 @@ import org.gradle.api.Task;
 import org.gradle.api.XmlProvider;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.plugins.BasePlugin;
-import org.gradle.api.plugins.BasePluginConvention;
+import org.gradle.api.plugins.BasePluginExtension;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.MavenPublication;
@@ -67,7 +67,8 @@ public class PublishPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
-        project.getPluginManager().apply("nebula.maven-base-publish");
+        project.getPluginManager().apply("com.netflix.nebula.maven-base-publish");
+        project.getPluginManager().apply("com.netflix.nebula.maven-nebula-publish");
         project.getPluginManager().apply(PomValidationPrecommitPlugin.class);
 
         configureJavadocJar(project);
@@ -76,7 +77,7 @@ public class PublishPlugin implements Plugin<Project> {
     }
 
     private static String getArchivesBaseName(Project project) {
-        return project.getConvention().getPlugin(BasePluginConvention.class).getArchivesBaseName();
+        return project.getExtensions().getByType(BasePluginExtension.class).getArchivesName().get();
     }
 
     /**Configuration generation of maven poms. */
@@ -108,15 +109,19 @@ public class PublishPlugin implements Plugin<Project> {
             // Here we manually add any project dependencies in the "shadow" configuration to our generated POM
             publication.getPom().withXml(xml -> {
                 Node root = xml.asNode();
-                root.appendNode("name", project.getName());
-                root.appendNode("description", project.getDescription());
+                if (((NodeList) root.get("name")).isEmpty()) {
+                    root.appendNode("name", project.getName());
+                }
+                if (((NodeList) root.get("description")).isEmpty()) {
+                    root.appendNode("description", project.getDescription());
+                }
                 Node dependenciesNode = (Node) ((NodeList) root.get("dependencies")).get(0);
                 project.getConfigurations().getByName(ShadowBasePlugin.CONFIGURATION_NAME).getAllDependencies().all(dependency -> {
                     if (dependency instanceof ProjectDependency) {
                         Node dependencyNode = dependenciesNode.appendNode("dependency");
                         dependencyNode.appendNode("groupId", dependency.getGroup());
                         ProjectDependency projectDependency = (ProjectDependency) dependency;
-                        String artifactId = getArchivesBaseName(projectDependency.getDependencyProject());
+                        String artifactId = getArchivesBaseName(project.project(projectDependency.getPath()));
                         dependencyNode.appendNode("artifactId", artifactId);
                         dependencyNode.appendNode("version", dependency.getVersion());
                         dependencyNode.appendNode("scope", "compile");

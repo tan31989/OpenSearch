@@ -1,6 +1,11 @@
 codecov:
   require_ci_to_pass: yes
 
+ignore:
+  - "test"
+  - "benchmarks"
+  - "plugins/arrow-flight-rpc/**/org/apache/arrow/flight/**"
+
 coverage:
   precision: 2
   round: down

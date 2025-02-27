@@ -35,13 +35,13 @@ package org.opensearch.rest.action.document;
 import org.opensearch.action.DocWriteRequest;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.support.ActiveShardCount;
-import org.opensearch.client.node.NodeClient;
 import org.opensearch.cluster.node.DiscoveryNodes;
 import org.opensearch.index.VersionType;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestActions;
 import org.opensearch.rest.action.RestStatusToXContentListener;
+import org.opensearch.transport.client.node.NodeClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -141,7 +141,7 @@ public class RestIndexAction extends BaseRestHandler {
         indexRequest.id(request.param("id"));
         indexRequest.routing(request.param("routing"));
         indexRequest.setPipeline(request.param("pipeline"));
-        indexRequest.source(request.requiredContent(), request.getXContentType());
+        indexRequest.source(request.requiredContent(), request.getMediaType());
         indexRequest.timeout(request.paramAsTime("timeout", IndexRequest.DEFAULT_TIMEOUT));
         indexRequest.setRefreshPolicy(request.param("refresh"));
         indexRequest.version(RestActions.parseVersion(request));

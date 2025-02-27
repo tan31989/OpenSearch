@@ -31,8 +31,8 @@
 
 package org.opensearch.repositories.gcs;
 
-import org.opensearch.common.xcontent.XContentBuilder;
-import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.xcontent.MediaTypeRegistry;
+import org.opensearch.core.xcontent.XContentBuilder;
 
 import java.io.ByteArrayOutputStream;
 import java.security.KeyPairGenerator;
@@ -50,11 +50,11 @@ final class TestUtils {
     static byte[] createServiceAccount(final Random random) {
         try {
             final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-            keyPairGenerator.initialize(1024);
+            keyPairGenerator.initialize(2048);
             final String privateKey = Base64.getEncoder().encodeToString(keyPairGenerator.generateKeyPair().getPrivate().getEncoded());
 
             final ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (XContentBuilder builder = new XContentBuilder(XContentType.JSON.xContent(), out)) {
+            try (XContentBuilder builder = new XContentBuilder(MediaTypeRegistry.JSON.xContent(), out)) {
                 builder.startObject();
                 {
                     builder.field("type", "service_account");

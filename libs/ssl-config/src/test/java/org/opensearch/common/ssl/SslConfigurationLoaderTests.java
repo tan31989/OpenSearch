@@ -33,12 +33,13 @@
 package org.opensearch.common.ssl;
 
 import org.opensearch.common.settings.MockSecureSettings;
-import org.opensearch.common.settings.SecureString;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.core.common.settings.SecureString;
 import org.opensearch.test.OpenSearchTestCase;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
+
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +53,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 public class SslConfigurationLoaderTests extends OpenSearchTestCase {
 
+    private final String STRONG_PRIVATE_SECRET = "6!6428DQXwPpi7@$ggeg/=";
     private final Path certRoot = getDataPath("/certs/ca1/ca.crt").getParent().getParent();
 
     private Settings settings;
@@ -165,9 +167,9 @@ public class SslConfigurationLoaderTests extends OpenSearchTestCase {
             .put("test.ssl.key", certName + "/" + certName + ".key");
         if (usePassword) {
             if (useLegacyPassword) {
-                builder.put("test.ssl.key_passphrase", "c2-pass");
+                builder.put("test.ssl.key_passphrase", STRONG_PRIVATE_SECRET);
             } else {
-                secureSettings.setString("test.ssl.secure_key_passphrase", "c2-pass");
+                secureSettings.setString("test.ssl.secure_key_passphrase", STRONG_PRIVATE_SECRET);
             }
         }
         settings = builder.build();

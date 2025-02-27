@@ -34,8 +34,6 @@ package org.opensearch.search.aggregations.bucket.terms;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.miscellaneous.DeDuplicatingTokenFilter;
-import org.apache.lucene.analysis.miscellaneous.DuplicateByteSequenceSpotter;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.util.BytesRef;
@@ -47,6 +45,8 @@ import org.opensearch.common.util.ObjectArray;
 import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryShardContext;
+import org.opensearch.lucene.analysis.miscellaneous.DeDuplicatingTokenFilter;
+import org.opensearch.lucene.analysis.miscellaneous.DuplicateByteSequenceSpotter;
 import org.opensearch.search.DocValueFormat;
 import org.opensearch.search.aggregations.Aggregator;
 import org.opensearch.search.aggregations.Aggregator.SubAggCollectionMode;
@@ -148,7 +148,6 @@ public class SignificantTextAggregatorFactory extends AggregatorFactory {
             : includeExclude.convertToStringFilter(DocValueFormat.RAW, maxRegexLength);
 
         MapStringTermsAggregator.CollectorSource collectorSource = new SignificantTextCollectorSource(
-            queryShardContext.lookup().source(),
             queryShardContext.bigArrays(),
             fieldType,
             sourceFieldNames,
@@ -186,13 +185,14 @@ public class SignificantTextAggregatorFactory extends AggregatorFactory {
         private ObjectArray<DuplicateByteSequenceSpotter> dupSequenceSpotters;
 
         SignificantTextCollectorSource(
-            SourceLookup sourceLookup,
             BigArrays bigArrays,
             MappedFieldType fieldType,
             String[] sourceFieldNames,
             boolean filterDuplicateText
         ) {
-            this.sourceLookup = sourceLookup;
+            // Create a new SourceLookup instance per aggregator instead of use the shared one from SearchLookup. This is fine because it
+            // will only be accessed by this Aggregator instance and not anywhere else.
+            this.sourceLookup = new SourceLookup();
             this.bigArrays = bigArrays;
             this.fieldType = fieldType;
             this.sourceFieldNames = sourceFieldNames;
@@ -311,5 +311,10 @@ public class SignificantTextAggregatorFactory extends AggregatorFactory {
         public void close() {
             Releasables.close(dupSequenceSpotters);
         }
+    }
+
+    @Override
+    protected boolean supportsConcurrentSegmentSearch() {
+        return true;
     }
 }

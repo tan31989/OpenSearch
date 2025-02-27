@@ -34,14 +34,14 @@ package org.opensearch.rest.action.admin.indices;
 
 import org.opensearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.opensearch.action.support.IndicesOptions;
-import org.opensearch.client.node.NodeClient;
-import org.opensearch.common.Strings;
 import org.opensearch.common.logging.DeprecationLogger;
 import org.opensearch.common.xcontent.XContentHelper;
+import org.opensearch.core.common.Strings;
 import org.opensearch.index.mapper.MapperService;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestToXContentListener;
+import org.opensearch.transport.client.node.NodeClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -49,9 +49,9 @@ import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
-import static org.opensearch.client.Requests.putMappingRequest;
 import static org.opensearch.rest.RestRequest.Method.POST;
 import static org.opensearch.rest.RestRequest.Method.PUT;
+import static org.opensearch.transport.client.Requests.putMappingRequest;
 
 /**
  * Transport action to put mapping
@@ -66,10 +66,10 @@ public class RestPutMappingAction extends BaseRestHandler {
     public List<Route> routes() {
         return unmodifiableList(
             asList(
-                new Route(POST, "/{index}/_mapping/"),
-                new Route(PUT, "/{index}/_mapping/"),
-                new Route(POST, "/{index}/_mappings/"),
-                new Route(PUT, "/{index}/_mappings/")
+                new Route(POST, "/{index}/_mapping"),
+                new Route(PUT, "/{index}/_mapping"),
+                new Route(POST, "/{index}/_mappings"),
+                new Route(PUT, "/{index}/_mappings")
             )
         );
     }
@@ -83,7 +83,7 @@ public class RestPutMappingAction extends BaseRestHandler {
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
 
         PutMappingRequest putMappingRequest = putMappingRequest(Strings.splitStringByCommaToArray(request.param("index")));
-        Map<String, Object> sourceAsMap = XContentHelper.convertToMap(request.requiredContent(), false, request.getXContentType()).v2();
+        Map<String, Object> sourceAsMap = XContentHelper.convertToMap(request.requiredContent(), false, request.getMediaType()).v2();
 
         if (MapperService.isMappingSourceTyped(MapperService.SINGLE_MAPPING_NAME, sourceAsMap)) {
             throw new IllegalArgumentException("Types cannot be provided in put mapping requests");
