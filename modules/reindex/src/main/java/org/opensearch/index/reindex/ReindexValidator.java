@@ -35,7 +35,6 @@ package org.opensearch.index.reindex;
 import org.apache.lucene.util.automaton.Automata;
 import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
-import org.apache.lucene.util.automaton.MinimizationOperations;
 import org.apache.lucene.util.automaton.Operations;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.action.DocWriteRequest;
@@ -45,10 +44,10 @@ import org.opensearch.action.support.AutoCreateIndex;
 import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.service.ClusterService;
-import org.opensearch.common.Strings;
 import org.opensearch.common.logging.DeprecationLogger;
 import org.opensearch.common.regex.Regex;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.core.common.Strings;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.search.builder.SearchSourceBuilder;
 
@@ -114,7 +113,7 @@ class ReindexValidator {
             return new CharacterRunAutomaton(Automata.makeEmpty());
         }
         Automaton automaton = Regex.simpleMatchToAutomaton(allowlist.toArray(Strings.EMPTY_ARRAY));
-        automaton = MinimizationOperations.minimize(automaton, Operations.DEFAULT_DETERMINIZE_WORK_LIMIT);
+        automaton = Operations.determinize(automaton, Operations.DEFAULT_DETERMINIZE_WORK_LIMIT);
         if (Operations.isTotal(automaton)) {
             throw new IllegalArgumentException(
                 "Refusing to start because allowlist "

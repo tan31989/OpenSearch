@@ -32,11 +32,11 @@
 package org.opensearch.rest.action.admin.indices;
 
 import org.opensearch.action.admin.indices.datastream.GetDataStreamAction;
-import org.opensearch.client.node.NodeClient;
-import org.opensearch.common.Strings;
+import org.opensearch.core.common.Strings;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestToXContentListener;
+import org.opensearch.transport.client.node.NodeClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -55,10 +55,7 @@ public class RestGetDataStreamsAction extends BaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return org.opensearch.common.collect.List.of(
-            new Route(RestRequest.Method.GET, "/_data_stream"),
-            new Route(RestRequest.Method.GET, "/_data_stream/{name}")
-        );
+        return List.of(new Route(RestRequest.Method.GET, "/_data_stream"), new Route(RestRequest.Method.GET, "/_data_stream/{name}"));
     }
 
     @Override

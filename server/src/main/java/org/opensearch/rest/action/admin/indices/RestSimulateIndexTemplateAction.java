@@ -35,12 +35,12 @@ package org.opensearch.rest.action.admin.indices;
 import org.opensearch.action.admin.indices.template.post.SimulateIndexTemplateAction;
 import org.opensearch.action.admin.indices.template.post.SimulateIndexTemplateRequest;
 import org.opensearch.action.admin.indices.template.put.PutComposableIndexTemplateAction;
-import org.opensearch.client.node.NodeClient;
 import org.opensearch.cluster.metadata.ComposableIndexTemplate;
 import org.opensearch.common.logging.DeprecationLogger;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestToXContentListener;
+import org.opensearch.transport.client.node.NodeClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -58,7 +58,7 @@ public class RestSimulateIndexTemplateAction extends BaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return org.opensearch.common.collect.List.of(new Route(POST, "/_index_template/_simulate_index/{name}"));
+        return List.of(new Route(POST, "/_index_template/_simulate_index/{name}"));
     }
 
     @Override

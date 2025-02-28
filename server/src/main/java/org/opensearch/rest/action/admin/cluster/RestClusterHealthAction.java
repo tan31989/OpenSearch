@@ -35,14 +35,14 @@ package org.opensearch.rest.action.admin.cluster;
 import org.opensearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.opensearch.action.support.ActiveShardCount;
 import org.opensearch.action.support.IndicesOptions;
-import org.opensearch.client.node.NodeClient;
 import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.common.Priority;
-import org.opensearch.common.Strings;
 import org.opensearch.common.logging.DeprecationLogger;
+import org.opensearch.core.common.Strings;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestStatusToXContentListener;
+import org.opensearch.transport.client.node.NodeClient;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -52,8 +52,8 @@ import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
-import static org.opensearch.client.Requests.clusterHealthRequest;
 import static org.opensearch.rest.RestRequest.Method.GET;
+import static org.opensearch.transport.client.Requests.clusterHealthRequest;
 
 /**
  * Transport action to get cluster health
@@ -89,11 +89,23 @@ public class RestClusterHealthAction extends BaseRestHandler {
         final ClusterHealthRequest clusterHealthRequest = clusterHealthRequest(Strings.splitStringByCommaToArray(request.param("index")));
         clusterHealthRequest.indicesOptions(IndicesOptions.fromRequest(request, clusterHealthRequest.indicesOptions()));
         clusterHealthRequest.local(request.paramAsBoolean("local", clusterHealthRequest.local()));
+        clusterHealthRequest.ensureNodeWeighedIn(
+            request.paramAsBoolean("ensure_node_weighed_in", clusterHealthRequest.ensureNodeWeighedIn())
+        );
         clusterHealthRequest.clusterManagerNodeTimeout(
             request.paramAsTime("cluster_manager_timeout", clusterHealthRequest.clusterManagerNodeTimeout())
         );
         parseDeprecatedMasterTimeoutParameter(clusterHealthRequest, request, deprecationLogger, "cluster_health");
         clusterHealthRequest.timeout(request.paramAsTime("timeout", clusterHealthRequest.timeout()));
+        String awarenessAttribute = request.param("awareness_attribute");
+        if (awarenessAttribute != null) {
+            clusterHealthRequest.setAwarenessAttribute(awarenessAttribute);
+        }
+        String level = request.param("level");
+        if (level != null) {
+            clusterHealthRequest.setLevel(level);
+        }
+        clusterHealthRequest.setApplyLevelAtTransportLayer(true);
         String waitForStatus = request.param("wait_for_status");
         if (waitForStatus != null) {
             clusterHealthRequest.waitForStatus(ClusterHealthStatus.valueOf(waitForStatus.toUpperCase(Locale.ROOT)));

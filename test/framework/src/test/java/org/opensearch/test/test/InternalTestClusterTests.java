@@ -32,23 +32,23 @@
 package org.opensearch.test.test;
 
 import org.apache.lucene.tests.util.LuceneTestCase;
-import org.opensearch.client.Client;
 import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.cluster.node.DiscoveryNodeRole;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.network.NetworkModule;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.core.internal.io.IOUtils;
+import org.opensearch.common.util.io.IOUtils;
 import org.opensearch.discovery.DiscoveryModule;
 import org.opensearch.discovery.SettingsBasedSeedHostsProvider;
 import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
 import org.opensearch.node.Node.DiscoverySettings;
 import org.opensearch.plugins.Plugin;
-import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.InternalTestCluster;
 import org.opensearch.test.MockHttpTransport;
 import org.opensearch.test.NodeConfigurationSource;
+import org.opensearch.test.OpenSearchTestCase;
+import org.opensearch.transport.client.Client;
 
 import java.io.IOException;
 import java.nio.file.Files;

@@ -8,20 +8,25 @@
 
 package org.opensearch.index.translog;
 
+import org.opensearch.common.annotation.PublicApi;
+import org.opensearch.common.lease.Releasable;
+
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.stream.Stream;
 
 /**
  * The interface that orchestrates Translog operations and manages the {@link Translog} and interfaces with the Engine
  *
- * @opensearch.internal
+ * @opensearch.api
  */
-public interface TranslogManager {
+@PublicApi(since = "1.0.0")
+public interface TranslogManager extends Closeable {
 
     /**
      * Rolls the translog generation and cleans unneeded.
      */
-    void rollTranslogGeneration() throws TranslogException;
+    void rollTranslogGeneration() throws TranslogException, IOException;
 
     /**
      * Performs recovery from the transaction log up to {@code recoverUpToSeqNo} (inclusive).
@@ -119,4 +124,65 @@ public interface TranslogManager {
      * Checks if the translog has a pending recovery
      */
     void ensureCanFlush();
+
+    /**
+     *
+     * @param seqNo : operations greater or equal to seqNo should be persisted
+     * This might be required when segments are persisted via other mechanism than flush.
+     */
+    void setMinSeqNoToKeep(long seqNo);
+
+    /*
+    Clean up if any needed on deletion of index
+     */
+    void onDelete();
+
+    /**
+     * Drains ongoing syncs to the underlying store. It returns a releasable which can be closed to resume the syncs back.
+     */
+    Releasable drainSync();
+
+    Translog.TranslogGeneration getTranslogGeneration();
+
+    /**
+     * Retrieves last synced global checkpoint.
+     */
+    long getLastSyncedGlobalCheckpoint();
+
+    /**
+     * Retrieves the max seq no.
+     */
+    long getMaxSeqNo();
+
+    /**
+     * Trims unreferenced translog generations by asking {@link TranslogDeletionPolicy} for the minimum required
+     * generation.
+     */
+    void trimUnreferencedReaders() throws IOException;
+
+    /**
+     *
+     * @param localCheckpointOfLastCommit local checkpoint reference of last commit to translog
+     * @param flushThreshold threshold to flush to translog
+     * @return if the translog should be flushed
+     */
+    boolean shouldPeriodicallyFlush(long localCheckpointOfLastCommit, long flushThreshold);
+
+    /**
+     * Retrieves the underlying translog tragic exception
+     * @return the tragic exception
+     */
+    Exception getTragicExceptionIfClosed();
+
+    /**
+     * Retrieves the translog deletion policy
+     * @return TranslogDeletionPolicy
+     */
+    TranslogDeletionPolicy getDeletionPolicy();
+
+    /**
+     * Retrieves the translog unique identifier
+     * @return the uuid of the translog
+     */
+    String getTranslogUUID();
 }

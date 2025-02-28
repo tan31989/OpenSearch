@@ -34,15 +34,15 @@ package org.opensearch.test;
 
 import org.opensearch.action.admin.cluster.remote.RemoteInfoAction;
 import org.opensearch.action.admin.cluster.remote.RemoteInfoRequest;
-import org.opensearch.client.Client;
 import org.opensearch.common.network.NetworkModule;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.core.internal.io.IOUtils;
+import org.opensearch.common.util.io.IOUtils;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.test.transport.MockTransportService;
 import org.opensearch.transport.RemoteClusterAware;
 import org.opensearch.transport.RemoteConnectionInfo;
 import org.opensearch.transport.TransportService;
+import org.opensearch.transport.client.Client;
 import org.opensearch.transport.nio.MockNioTransportPlugin;
 import org.junit.After;
 import org.junit.AfterClass;

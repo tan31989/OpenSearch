@@ -36,9 +36,9 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.discovery.ClusterManagerNotDiscoveredException;
 import org.opensearch.gateway.GatewayService;
+import org.opensearch.test.InternalTestCluster;
 import org.opensearch.test.OpenSearchIntegTestCase;
 import org.opensearch.test.OpenSearchIntegTestCase.ClusterScope;
-import org.opensearch.test.InternalTestCluster;
 
 import java.io.IOException;
 
@@ -49,7 +49,7 @@ public class IndicesExistsIT extends OpenSearchIntegTestCase {
 
     public void testIndexExistsWithBlocksInPlace() throws IOException {
         internalCluster().setBootstrapClusterManagerNodeIndex(0);
-        Settings settings = Settings.builder().put(GatewayService.RECOVER_AFTER_NODES_SETTING.getKey(), 99).build();
+        Settings settings = Settings.builder().put(GatewayService.RECOVER_AFTER_DATA_NODES_SETTING.getKey(), 99).build();
         String node = internalCluster().startNode(settings);
 
         assertRequestBuilderThrows(

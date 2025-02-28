@@ -36,22 +36,22 @@ import org.opensearch.action.admin.indices.shards.IndicesShardStoresAction;
 import org.opensearch.action.admin.indices.shards.IndicesShardStoresRequest;
 import org.opensearch.action.admin.indices.shards.IndicesShardStoresResponse;
 import org.opensearch.action.support.IndicesOptions;
-import org.opensearch.client.node.NodeClient;
-import org.opensearch.common.Strings;
-import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.core.common.Strings;
+import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.BytesRestResponse;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.RestResponse;
 import org.opensearch.rest.action.RestBuilderListener;
+import org.opensearch.transport.client.node.NodeClient;
 
 import java.io.IOException;
 import java.util.List;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
+import static org.opensearch.core.rest.RestStatus.OK;
 import static org.opensearch.rest.RestRequest.Method.GET;
-import static org.opensearch.rest.RestStatus.OK;
 
 /**
  * Rest action for {@link IndicesShardStoresAction}

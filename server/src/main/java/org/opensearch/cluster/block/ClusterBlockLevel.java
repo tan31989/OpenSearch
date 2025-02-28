@@ -32,18 +32,22 @@
 
 package org.opensearch.cluster.block;
 
+import org.opensearch.common.annotation.PublicApi;
+
 import java.util.EnumSet;
 
 /**
  * What level to block the cluster
  *
- * @opensearch.internal
+ * @opensearch.api
  */
+@PublicApi(since = "1.0.0")
 public enum ClusterBlockLevel {
     READ,
     WRITE,
     METADATA_READ,
-    METADATA_WRITE;
+    METADATA_WRITE,
+    CREATE_INDEX;
 
     public static final EnumSet<ClusterBlockLevel> ALL = EnumSet.allOf(ClusterBlockLevel.class);
     public static final EnumSet<ClusterBlockLevel> READ_WRITE = EnumSet.of(READ, WRITE);
